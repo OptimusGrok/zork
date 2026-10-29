@@ -10,7 +10,8 @@ html,body{margin:0;height:100%;background:#050607;color:#cfc9b8;font-family:ui-m
 #lookup{position:absolute;right:calc(8px + env(safe-area-inset-right));top:calc(8px + env(safe-area-inset-top));z-index:2;background:rgba(10,12,14,.65);color:#d8d2c0;border:1px solid #444;border-radius:6px;font:inherit;font-size:12px;padding:7px 10px}
 #mute{position:absolute;left:calc(8px + env(safe-area-inset-left));top:calc(8px + env(safe-area-inset-top));z-index:2;background:rgba(10,12,14,.55);color:#aaa;border:1px solid #333;border-radius:6px;font:inherit;font-size:12px;padding:7px 9px}
 #ui{position:absolute;left:0;right:0;bottom:0;max-height:62%;display:flex;flex-direction:column;background:linear-gradient(to bottom,rgba(5,6,7,0) 0,rgba(5,6,7,.72) 34px,rgba(5,6,7,.9) 100%);padding-top:26px;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);pointer-events:none}
-#ui>*{pointer-events:auto;width:100%;max-width:760px;margin:0 auto}
+#ui *{pointer-events:none}#ui button,#ui #txt{pointer-events:auto}
+#ui>*{width:100%;max-width:760px;margin:0 auto}
 #bar{flex:none;display:flex;gap:6px;align-items:center;padding:6px 10px;min-height:42px;flex-wrap:wrap;font-size:12px;color:#7d7a70}
 #inv{display:flex;gap:6px;flex-wrap:wrap;flex:1;align-items:center}
 .item{background:rgba(19,20,22,.85);color:#cfc9b8;border:1px solid #3a3a3a;border-radius:5px;font:inherit;font-size:12px;padding:6px 9px}
@@ -563,11 +564,11 @@ function hotspots(){const v=G.view,h=[];
  if(v==='bedroom'){if(G.seen)h.push(['figure',[285,160,70,175]]);h.push(['bwin',[255,130,130,180]],['mirror',[55,135,80,200]])}
  return h}
 const GOTO={'@porch':()=>go('porch',"You climb toward the porch."),'@parlor':goParlor,'@kitchen':goKitchen,'@stairs':goStairs,'@bed':goBed};
-cv.addEventListener('pointerdown',e=>{A.init();if(G.ending||!$('title').classList.contains('hidden'))return;const r=cv.getBoundingClientRect(),sc=Math.max(r.width/W,r.height/H),x=(e.clientX-r.left-(r.width-W*sc)/2)/sc,y=(e.clientY-r.top-(r.height-H*sc)/2)/sc;
+const cvTap=e=>{A.init();if(G.ending||!$('title').classList.contains('hidden'))return;const r=cv.getBoundingClientRect(),sc=Math.max(r.width/W,r.height/H),x=(e.clientX-r.left-(r.width-W*sc)/2)/sc,y=(e.clientY-r.top-(r.height-H*sc)/2)/sc;
  if(G.view==='up')return;
  const hs=hotspots().find(([k,q])=>x>=q[0]&&x<=q[0]+q[2]&&y>=q[1]&&y<=q[1]+q[3]);if(!hs)return;const k=hs[0];
  if(G.sel){const it=G.sel;if(it==='brass key'&&k==='door')return unlock();if(it==='iron key'&&k==='gate')return ending('gate');if(it==='photograph'&&k==='figure')return ending('remember');G.sel=null;renderInv();return present("Nothing happens. That isn't where the "+it+" goes.",menu())}
- if(k==='upwin')return lookUp();if(GOTO[k])return GOTO[k]();openObj(k)});
+ if(k==='upwin')return lookUp();if(GOTO[k])return GOTO[k]();openObj(k)};cv.addEventListener('pointerdown',cvTap);{const T=document.getElementById('txt');let skip=false;T.addEventListener('pointerdown',()=>{skip=!!typer},true);T.addEventListener('click',e=>{if(!skip)cvTap(e);skip=false})}
 let fpsN=0,fpsT=performance.now(),lastHB=0;window.__fps=0;
 function frame(n){requestAnimationFrame(frame);const t=n/1000,v=G.view;X.setTransform(S,0,0,S,0,0);X.drawImage(getBG(v),0,0,W,H);
  const fig=(n>=figStart&&n<=figUntil)?1:0;
