@@ -426,7 +426,7 @@ function getBG(v){if(!BG[v]){const [c,x]=mk(W,H);BGF[v](x,rng(1234+v.length*7));
 const WEEDS=[];{const R=rng(3);for(let i=0;i<70;i++){const y=350+R()*125;WEEDS.push([R()*W,y,(12+R()*30)*(.5+(y-350)/125),R()*6,pick(R,['#5d5236','#6e6040','#4b432c','#7d6f4a'])])}}
 function weeds(c,t,sc){for(const [x,y,h,ph,col] of WEEDS){const s=Math.sin(t*1.4+ph+x*.01)*h*.18;c.strokeStyle=col;c.lineWidth=1.2*sc;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+s*.4,y-h*.5,x+s,y-h);c.stroke();c.fillStyle=col;c.beginPath();c.ellipse(x+s,y-h,1.6*sc,3.5*sc,s*.05,0,7);c.fill()}}
 const MOTES=[];{const R=rng(4);for(let i=0;i<45;i++)MOTES.push([R()*W,R()*H,R()*6,.5+R()*1.2])}
-const A={c:null,on:true,m:null,init(){if(this.c){if(this.c.state==='suspended')this.c.resume();return}const C=window.AudioContext||window.webkitAudioContext;if(!C)return;try{const c=this.c=new C();this.m=c.createGain();this.m.gain.value=.9;this.m.connect(c.destination);
+const A={c:null,on:true,m:null,init(){if(this.c){if(this.c.state==='suspended')this.c.resume();return}const C=window.AudioContext||window.webkitAudioContext;if(!C)return;try{const c=this.c=new C();this.m=c.createGain();this.m.gain.value=this.on?.9:0;this.m.connect(c.destination);
  const nb=c.createBuffer(1,c.sampleRate*2,c.sampleRate),d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;this.nb=nb;
  const n=c.createBufferSource();n.buffer=nb;n.loop=true;const f=c.createBiquadFilter();f.type='bandpass';f.frequency.value=380;f.Q.value=.6;const g=c.createGain();g.gain.value=.12;const l=c.createOscillator();l.frequency.value=.09;const lg=c.createGain();lg.gain.value=220;l.connect(lg);lg.connect(f.frequency);const l2=c.createOscillator();l2.frequency.value=.13;const l2g=c.createGain();l2g.gain.value=.06;l2.connect(l2g);l2g.connect(g.gain);n.connect(f);f.connect(g);g.connect(this.m);n.start();l.start();l2.start();
  const h=c.createOscillator();h.frequency.value=49;const h2=c.createOscillator();h2.frequency.value=73.4;const hg=c.createGain();hg.gain.value=.035;h.connect(hg);h2.connect(hg);hg.connect(this.m);h.start();h2.start()}catch(e){this.c=null}},
@@ -459,6 +459,31 @@ function roomFX(X,v,t,n){
  else if(v==='bedroom'){shaft(X,[[270,140],[370,140],[420,470],[220,470]],.07+Math.sin(t*.4)*.01);motes(X,t,[240,150,180,300],.35);
   if(G.seen){const jerk=(t%7.3)<.18,tl=jerk?-.35:.3+Math.sin(t*.35)*.05;X.save();X.globalCompositeOperation='lighter';rad(X,320,200,120,'rgba(150,170,210,A)',.08);X.restore();figureBody(X,320+Math.sin(t*.5)*.6,332,2.3,t,.55,-16,1,tl);X.strokeStyle='rgba(180,195,220,.25)';X.lineWidth=1;X.beginPath();X.moveTo(292,330);X.quadraticCurveTo(290,260,298,226);X.stroke()}
   const s=Math.sin(t*.9)*6;X.save();X.beginPath();X.rect(262,132,116,170);X.clip();curtain(X,262,132,30,168,s,1,'rgba(190,185,170,.38)');curtain(X,378,132,-28,168,s,1,'rgba(190,185,170,.38)');X.restore()}}
+// Background music: slow eerie pad chords + occasional music-box phrase. Built on A (art5.js).
+const MU={g:null,lp:null,t:null,next:0,ci:0,mbNext:0,endK:null,
+ // chords as semitone offsets from root (A1=55Hz)
+ SETS:{out:[[0,7,15,19],[-2,5,12,17],[3,10,15,22],[-4,3,10,15]],
+  in0:[[0,7,12,15],[1,8,13,16],[-2,5,12,15],[0,6,12,15]],
+  in2:[[0,1,7,13],[0,6,11,13],[-1,0,6,12],[0,3,6,13]],
+  gate:[[0,7,12,16],[5,12,17,21]],remember:[[0,7,15,19],[3,10,15,19]],tenant:[[0,1,6,12],[0,1,6,11]]},
+ MB:[[12,15,19,24,22,19],[24,22,19,15,14,12],[19,20,19,15,12,7],[12,19,18,15,13,12]],
+ start(){const c=A.c;if(!c||this.g)return;this.g=c.createGain();this.g.gain.value=0;this.lp=c.createBiquadFilter();this.lp.type='lowpass';this.lp.frequency.value=900;this.lp.Q.value=.7;this.lp.connect(this.g);this.g.connect(A.m);this.next=c.currentTime+.3;this.mbNext=c.currentTime+14;this.t=setInterval(()=>this.tick(),400);this.tick()},
+ lvl(){if(typeof G==='undefined'||!G)return{set:"out",vol:.24,cut:900,dur:9};if(this.endK)return{set:this.endK,vol:.3,cut:this.endK==='tenant'?650:1500,dur:7};const t=tier(),o=OUT(G.view);
+  return{set:o?'out':(t>=2?'in2':'in0'),vol:[.24,.3,.36][t]*(o?1:.9),cut:o?[1100,950,800][t]:[700,620,520][t],dur:[10,8.5,7][t]}},
+ tick(){const c=A.c;if(!c||!this.g)return;const L=this.lvl(),now=c.currentTime;
+  this.g.gain.setTargetAtTime(A.on&&!document.hidden?L.vol:0,now,1.2);this.lp.frequency.setTargetAtTime(L.cut,now,2);
+  if(this.next<now+.8){const S=this.SETS[L.set];this.ci=(this.ci+1+(Math.random()<.3?1:0))%S.length;this.chord(S[this.ci],this.next,L.dur);this.next+=L.dur*.85}
+  if(this.mbNext<now+.5){if(!this.endK||this.endK==='remember')this.box(this.mbNext,L.set);const t=typeof G!=='undefined'&&G?tier():0;this.mbNext+=[26,20,15][t]+Math.random()*10}},
+ hz:s=>55*Math.pow(2,s/12),
+ chord(ch,t,d){const c=A.c;ch.forEach((s,i)=>{const f=this.hz(s+(i?12:0));for(const det of [-4,4]){const o=c.createOscillator();o.type=i?'triangle':'sine';o.frequency.value=f;o.detune.value=det+(Math.random()-.5)*6;const g=c.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(i?.05:.08,t+d*.35);g.gain.linearRampToValueAtTime(0,t+d);o.connect(g);g.connect(this.lp);o.start(t);o.stop(t+d+.1)}})},
+ box(t,set){const c=A.c,ph=this.MB[Math.random()*this.MB.length|0],dark=set==='in2'||set==='tenant',sp=dark?.62:.48,root=dark?-0.6:0;
+  ph.forEach((s,i)=>{const o=c.createOscillator();o.type='sine';o.frequency.value=this.hz(s+36)*Math.pow(2,root/12);const g=c.createGain(),tt=t+i*sp*(1+Math.random()*.08);g.gain.setValueAtTime(0,tt);g.gain.linearRampToValueAtTime(.06,tt+.01);g.gain.exponentialRampToValueAtTime(.0001,tt+1.6);o.connect(g);g.connect(this.g);o.start(tt);o.stop(tt+1.7)})},
+ end(k){this.endK=k;if(A.c){this.next=A.c.currentTime+.2;this.ci=0}},
+ reset(){this.endK=null}};
+(function(){const oi=A.init.bind(A);A.init=function(){oi();if(this.c&&!MU.g)MU.start()};
+ const os=A.setOn.bind(A);A.setOn=function(v){os(v);try{localStorage.setItem('zork-music',v?'1':'0')}catch(e){}if(MU.g&&this.c)MU.g.gain.setTargetAtTime(v?MU.lvl().vol:0,this.c.currentTime,.1)};
+ try{if(localStorage.getItem('zork-music')==='0')A.on=false}catch(e){}
+ document.addEventListener('visibilitychange',()=>{if(!A.c)return;if(document.hidden)A.c.suspend&&A.c.suspend();else if(A.on||true)A.c.resume&&A.c.resume()})})();
 const SECRETS={note:'The doormat note',tag:'The seed tag in the plant',glimpse:'A look through the broken window',knock:'Something knocked back',figure:'The figure in the upstairs window',clock:'The clock stopped at that time',letter:'The burnt letter',photo:'You, in the photograph',mirror:'The late reflection',lockbox:'The lockbox'};
 const ENDINGS={gate:'OUT THE GATE',remember:'REMEMBERED',tenant:'THE TENANT'};
 let G;
@@ -543,7 +568,7 @@ function openObj(id){const o=OBJ[id];if(id==='mailbox'){if(G.view!=='mailbox')re
  present(o.text(),o.ch())}
 function takeKey(){give('brass key');G.f.keyTaken=1;delete BG.mailbox;delete BG.yard;A.click();present(act("You lift out the brass key. It's warm, as if someone just put it down.\n\nThe bow is shaped like a little house. Like this house.",1,true),[["Back to the yard",()=>go('yard',"You stand in the yard with the key in your fist. The front door is waiting.")],["Go to the front door",()=>go('porch',"You climb onto the porch. The door waits.")]])}
 function unlock(){take('brass key');G.f.inside=1;A.click();setTimeout(()=>A.creak(.5,0),400);vib(40);G.prev='porch';G.view='hall';setLook();note('The brass key opened the front door. It stayed in the lock.');present(act("The key turns with a heavy clunk. The door swings inward on its own, slowly, breathing out cold air and mildew.\n\nYou step inside. Behind you, the door closes. The key stays on the other side."+(G.seen?"\n\nThe chair in the hall has been turned to face you.":""),2),menu())}
-function ending(k,how){G.ending=k;const sec=G.sec.length,tot=Object.keys(SECRETS).length;let t='';
+function ending(k,how){G.ending=k;MU.end(k);const sec=G.sec.length,tot=Object.keys(SECRETS).length;let t='';
  if(k==='gate')t="The iron key turns. The gate swings out onto a road you don't remember, lit grey by a morning that has finally arrived.\n\nYou don't look back. You don't need to. You can feel the upstairs window watching you go"+(G.seen?", and something in it lifting a hand to wave.":".");
  if(k==='remember')t="You hold up the photograph. It turns.\n\nIt has your face, older and very tired. It looks at the photo for a long time, then at you, and remembers.\n\nIt takes your hand. Its fingers are cold, then warm. Downstairs, the clock starts ticking. When you look back at the window, there is nobody in it at all. For the first time, the house is empty.";
  if(k==='tenant')t=(how==='bed'?"You lie down, just for a moment. The mattress is soft and smells of someone you used to be.\n\n":how==='touch'?"You touch its shoulder. It turns around, and it is you, and you are it, and you're the one standing at the window now.\n\n":"You stand on the worn pale boards in front of the glass. It feels right. It feels like yours.\n\n")+"Down in the yard, someone wakes up in the dead grass and looks around. Eventually they'll look up.\n\nYou'll be ready.";
@@ -583,7 +608,7 @@ function frame(n){requestAnimationFrame(frame);const t=n/1000,v=G.view;X.setTran
  X.globalAlpha=.08;X.drawImage(GRAIN[(n/60|0)%3],(Math.random()*20|0)-20,(Math.random()*20|0)-20,W+20,H+20);X.globalAlpha=1;
  if(tr===2&&n-lastHB>950){lastHB=n;A.heart()}
  fpsN++;if(n-fpsT>=1000){window.__fps=fpsN*1000/(n-fpsT);fpsN=0;fpsT=n}}
-function start(fresh){if(fresh)newGame();$('title').classList.add('hidden');renderInv();A.init();
+function start(fresh){if(fresh)newGame();MU.reset();$('title').classList.add('hidden');renderInv();A.init();
  if(G.view==='up')G.view=G.prev||'yard';setLook();
  if(fresh)present("You wake up face down in dead grass.\n\nYour coat is soaked with dew. Your head is full of fog and your pockets are empty. You don't remember lying down.\n\nAround you, a tall plank fence. Ahead, a white house that stopped being white a long time ago. Upstairs, a window with lace curtains.\n\nIt's very quiet. Then, somewhere in the house, a board creaks.",menu());
  else present("You remember where you were. The house remembers too.",menu())}
@@ -592,4 +617,5 @@ function title(){let sv=null;try{sv=JSON.parse(localStorage.getItem('zork-save-v
  const b=document.createElement('button');b.className='c';b.textContent='New game';b.onclick=()=>start(true);tb.appendChild(b);const ef=endingsFound();$('tend').textContent=ef.length?'Endings found: '+ef.length+' / 3':''}
 newGame();title();requestAnimationFrame(frame);
 window.__zork={get G(){return G},forceFigure(){wasFig=0;figStart=performance.now();figUntil=figStart+1700},figWindow:()=>[figStart,figUntil,performance.now()]};
+$('mute').textContent=A.on?'♪ on':'♪ off';
 </script></body></html>
